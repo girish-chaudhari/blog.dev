@@ -16,29 +16,12 @@ Built with next.js, [shadcn/ui](https://ui.shadcn.com/), and [magic ui](https://
 
 # Getting Started Locally
 
-1. Clone this repository to your local machine:
+1. Cehck my portfolio on github: 
 
    ```bash
-   git clone https://github.com/dillionverma/portfolio
+   git clone https://github.com/girish-chaudhari/
    ```
 
-2. Move to the cloned directory
-
-   ```bash
-   cd portfolio
-   ```
-
-3. Install dependencies:
-
-   ```bash
-   pnpm install
-   ```
-
-4. Start the local Server:
-
-   ```bash
-   pnpm dev
-   ```
 
 5. Open the [Config file](./src/data/resume.tsx) and make changes
 
