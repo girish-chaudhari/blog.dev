@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
 import { Inter as FontSans } from "next/font/google";
 import "./globals.css";
+import BackgroundOverlay from "@/components/background-overlay";
 
 const fontSans = FontSans({
   subsets: ["latin"],
@@ -67,6 +68,8 @@ export default function RootLayout({
             <Navbar />
           </TooltipProvider>
         </ThemeProvider>
+
+       <BackgroundOverlay />
       </body>
     </html>
   );
