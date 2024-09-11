@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { ReactNode, useState } from "react";
 
 function Table({ data }: { data: { headers: string[]; rows: string[][] } }) {
   let headers = data.headers.map((header, index) => (
@@ -105,21 +105,18 @@ interface ChecklistProps {
 
 const Checklist: React.FC<ChecklistProps> = ({ items, readOnly = false }) => {
   return (
-    <ul className="list-disc pl-5">
+    <ul className="list-none p-0">
       {items.map((item, index) => (
-        <li
-          key={index}
-          className={`flex items-center ${
-            readOnly ? "cursor-not-allowed" : ""
-          }`}
-        >
+        <li key={index} className="flex items-center space-x-2">
           <input
             type="checkbox"
             checked={item.checked}
             readOnly={readOnly}
             className="mr-2"
           />
-          {item.text}
+          <span className={item.checked ? "line-through text-gray-500" : ""}>
+            {item.text}
+          </span>{" "}
         </li>
       ))}
     </ul>
@@ -273,6 +270,18 @@ const ExcalidrawEmbed: React.FC<ExcalidrawEmbedProps> = ({ url }) => {
   );
 };
 
+interface ReminderProps {
+  children: ReactNode; // The URL of the Excalidraw drawing
+}
+
+const Reminder: React.FC<ReminderProps> = ({ children }) => {
+  return (
+    <div className="border-2 border-red-400 p-4 rounded-lg bg-red-100 text-red-600 font-bold mt-5">
+      {children}
+    </div>
+  );
+};
+
 export const globalComponents = {
   h1: createHeading(1),
   h2: createHeading(2),
@@ -294,4 +303,5 @@ export const globalComponents = {
   Quote,
   Embed,
   Excalidraw: ExcalidrawEmbed,
+  Reminder,
 };
