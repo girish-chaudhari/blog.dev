@@ -3,7 +3,7 @@ const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ["next-mdx-remote"],
   eslint:{
-    ignoreDuringBuilds: true
+    ignoreDuringBuilds: false
   }
 };
 
