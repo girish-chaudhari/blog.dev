@@ -6,6 +6,7 @@ import rehypeStringify from "rehype-stringify";
 import remarkParse from "remark-parse";
 import remarkRehype from "remark-rehype";
 import { unified } from "unified";
+import { transformerCopyButton } from '@rehype-pretty/transformers'
 
 type Metadata = {
   title: string;
@@ -24,11 +25,18 @@ export async function markdownToHTML(markdown: string) {
     .use(remarkRehype)
     .use(rehypePrettyCode, {
       // https://rehype-pretty.pages.dev/#usage
-      theme: {
-        light: "min-light",
-        dark: "min-dark",
-      },
+      theme:"github-dark",
+      // theme: {
+      //   light: "min-light",
+      //   dark: "min-dark",
+      // },
       keepBackground: false,
+      transformers: [
+        transformerCopyButton({
+          visibility: 'hover',
+          feedbackDuration: 3_000,
+        }),
+      ],
     })
     .use(rehypeStringify)
     .process(markdown);
