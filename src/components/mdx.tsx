@@ -208,6 +208,71 @@ const CodeSandboxEmbed: React.FC<CodeSandboxEmbedProps> = ({ sandboxId }) => {
   );
 };
 
+interface TwitterEmbedProps {
+  tweetId: string;
+}
+
+const TwitterEmbed: React.FC<TwitterEmbedProps> = ({ tweetId }) => {
+  return (
+    <blockquote className="twitter-tweet">
+      <a href={`https://twitter.com/statuses/${tweetId}`}>Tweet</a>
+      <script
+        async
+        src="https://platform.twitter.com/widgets.js"
+        charSet="utf-8"
+      ></script>
+    </blockquote>
+  );
+};
+
+interface QuoteProps {
+  text: string;
+  author: string;
+}
+
+const Quote: React.FC<QuoteProps> = ({ text, author }) => {
+  return (
+    <blockquote className="border-l-4 border-gray-400 pl-4 italic text-gray-600">
+      <p>"{text}"</p>
+      <footer className="mt-2 text-right">— {author}</footer>
+    </blockquote>
+  );
+};
+
+interface EmbedProps {
+  url: string;
+  title: string;
+}
+
+const Embed: React.FC<EmbedProps> = ({ url, title }) => {
+  return (
+    <div className="w-full h-[500px]">
+      <iframe
+        src={url}
+        className="w-full h-full border-none"
+        title={title}
+      ></iframe>
+    </div>
+  );
+};
+
+interface ExcalidrawEmbedProps {
+  url: string; // The URL of the Excalidraw drawing
+}
+
+const ExcalidrawEmbed: React.FC<ExcalidrawEmbedProps> = ({ url }) => {
+  return (
+    <div className="w-full h-[600px]">
+      <iframe
+        src={url}
+        className="w-full h-full border-none"
+        title="Excalidraw Drawing"
+        allow="fullscreen"
+      ></iframe>
+    </div>
+  );
+};
+
 export const globalComponents = {
   h1: createHeading(1),
   h2: createHeading(2),
@@ -225,4 +290,8 @@ export const globalComponents = {
   NumberedList,
   BulletedList,
   CodeSandbox: CodeSandboxEmbed,
+  Tweet: TwitterEmbed,
+  Quote,
+  Embed,
+  Excalidraw: ExcalidrawEmbed,
 };
