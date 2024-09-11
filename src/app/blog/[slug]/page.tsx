@@ -1,4 +1,4 @@
-import CustomMDX from "@/components/mdx";
+// import CustomMDX from "@/components/mdx";
 import { getPost } from "@/data/blog";
 import { DATA } from "@/data/resume";
 import { formatDate } from "@/lib/utils";
