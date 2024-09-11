@@ -402,14 +402,14 @@ export const globalComponents = {
 //   );
 // }
 
-interface Props {
-  mdxSource: MDXRemoteSerializeResult;
-}
+// interface Props {
+//   mdxSource: MDXRemoteSerializeResult;
+// }
 
-export default function CustomMDX({mdxSource} : Props) {
-  return (
-    <div>
-      <MDXRemote {...mdxSource} components={{...globalComponents}} />
-    </div>
-  );
-}
+// export default function CustomMDX({mdxSource} : Props) {
+//   return (
+//     <div>
+//       <MDXRemote {...mdxSource} components={{...globalComponents}} />
+//     </div>
+//   );
+// }
