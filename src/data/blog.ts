@@ -6,7 +6,7 @@ import rehypeStringify from "rehype-stringify";
 import remarkParse from "remark-parse";
 import remarkRehype from "remark-rehype";
 import { unified } from "unified";
-import { transformerCopyButton } from '@rehype-pretty/transformers'
+import { transformerCopyButton } from "@rehype-pretty/transformers";
 
 type Metadata = {
   title: string;
@@ -19,13 +19,41 @@ function getMDXFiles(dir: string) {
   return fs.readdirSync(dir).filter((file) => path.extname(file) === ".mdx");
 }
 
+function readMDXFile(filePath: string) {
+  let rawContent = fs.readFileSync(filePath, "utf-8");
+  return parseFrontmatter(rawContent);
+}
+
+function extractTweetIds(content: any) {
+  let tweetMatches = content.match(/<StaticTweet\sid="[0-9]+"\s\/>/g);
+  return tweetMatches?.map((tweet: any) => tweet.match(/[0-9]+/g)[0]) || [];
+}
+
+function parseFrontmatter(fileContent: string) {
+  let frontmatterRegex = /---\s*([\s\S]*?)\s*---/;
+  let match = frontmatterRegex.exec(fileContent);
+  let frontMatterBlock = match![1];
+  let content = fileContent.replace(frontmatterRegex, "").trim();
+  let frontMatterLines = frontMatterBlock.trim().split("\n");
+  let metadata: Partial<Metadata> = {};
+
+  frontMatterLines.forEach((line) => {
+    let [key, ...valueArr] = line.split(": ");
+    let value = valueArr.join(": ").trim();
+    value = value.replace(/^['"](.*)['"]$/, "$1"); // Remove quotes
+    metadata[key.trim() as keyof Metadata] = value;
+  });
+
+  return { metadata: metadata as Metadata, content };
+}
+
 export async function markdownToHTML(markdown: string) {
   const p = await unified()
     .use(remarkParse)
     .use(remarkRehype)
     .use(rehypePrettyCode, {
       // https://rehype-pretty.pages.dev/#usage
-      theme:"github-dark",
+      theme: "github-dark",
       // theme: {
       //   light: "min-light",
       //   dark: "min-dark",
@@ -33,7 +61,7 @@ export async function markdownToHTML(markdown: string) {
       keepBackground: false,
       transformers: [
         transformerCopyButton({
-          visibility: 'hover',
+          visibility: "hover",
           feedbackDuration: 3_000,
         }),
       ],
@@ -46,13 +74,16 @@ export async function markdownToHTML(markdown: string) {
 
 export async function getPost(slug: string) {
   const filePath = path.join("content", `${slug}.mdx`);
-  let source = fs.readFileSync(filePath, "utf-8");
-  const { content: rawContent, data: metadata } = matter(source);
-  const content = await markdownToHTML(rawContent);
+  // let source = fs.readFileSync(filePath, "utf-8");
+  // const { content: rawContent, data: metadata } = matter(source);
+  let { metadata, content } = readMDXFile(filePath);
+  // const content = await markdownToHTML(rawContent);
+  // const tweetIds = extractTweetIds(content);
   return {
     source: content,
     metadata,
     slug,
+    // tweetIds,
   };
 }
 
