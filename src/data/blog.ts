@@ -6,7 +6,7 @@ import rehypeStringify from "rehype-stringify";
 import remarkParse from "remark-parse";
 import remarkRehype from "remark-rehype";
 import { unified } from "unified";
-import { transformerCopyButton } from '@rehype-pretty/transformers'
+import { transformerCopyButton } from "@rehype-pretty/transformers";
 
 type Metadata = {
   title: string;
@@ -19,21 +19,30 @@ function getMDXFiles(dir: string) {
   return fs.readdirSync(dir).filter((file) => path.extname(file) === ".mdx");
 }
 
+export async function highlightCode(code: string) {
+  const file = await unified()
+    .use(remarkParse)
+    .use(remarkRehype)
+    .use(rehypePrettyCode, {
+      keepBackground: false,
+    })
+    .use(rehypeStringify)
+    .process(code);
+
+  return String(file);
+}
+
 export async function markdownToHTML(markdown: string) {
   const p = await unified()
     .use(remarkParse)
     .use(remarkRehype)
     .use(rehypePrettyCode, {
       // https://rehype-pretty.pages.dev/#usage
-      theme:"github-dark",
-      // theme: {
-      //   light: "min-light",
-      //   dark: "min-dark",
-      // },
+      theme: "github-dark",
       keepBackground: false,
       transformers: [
         transformerCopyButton({
-          visibility: 'hover',
+          visibility: "hover",
           feedbackDuration: 3_000,
         }),
       ],
@@ -48,9 +57,9 @@ export async function getPost(slug: string) {
   const filePath = path.join("content", `${slug}.mdx`);
   let source = fs.readFileSync(filePath, "utf-8");
   const { content: rawContent, data: metadata } = matter(source);
-  const content = await markdownToHTML(rawContent);
+  // const content = await markdownToHTML(rawContent);
   return {
-    source: content,
+    source: rawContent,
     metadata,
     slug,
   };

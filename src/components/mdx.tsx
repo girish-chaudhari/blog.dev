@@ -1,11 +1,15 @@
 // "use client";
 
+import clsx from "clsx";
+import { MDXRemote } from "next-mdx-remote/rsc";
 import Image from "next/image";
 import Link from "next/link";
 import React, { ReactNode } from "react";
+import rehypePrettyCode from "rehype-pretty-code";
+import remarkRehype from "remark-rehype";
+import { CopyButton } from "./copy-button";
 import { LiveCode } from "./sandpack";
 import { TweetComponent } from "./tweet";
-import { MDXRemote, type MDXRemoteSerializeResult } from "next-mdx-remote/rsc";
 
 function Table({ data }: { data: { headers: string[]; rows: string[][] } }) {
   let headers = data.headers.map((header, index) => (
@@ -364,6 +368,21 @@ const ConsCard: React.FC<ConsCardProps> = ({ title, cons }) => {
     </div>
   );
 };
+
+function Pre({
+  children,
+  raw,
+  buttonClasses = "absolute top-3 right-3 bg-zinc-900",
+  ...props
+}: any) {
+  return (
+    <pre {...props} className={clsx("relative", props.className)}>
+      {children}
+      <CopyButton text={children} className={buttonClasses} />
+    </pre>
+  );
+}
+
 export const globalComponents = {
   h1: createHeading(1),
   h2: createHeading(2),
@@ -373,6 +392,7 @@ export const globalComponents = {
   h6: createHeading(6),
   Image: RoundedImage,
   a: CustomLink,
+  // pre: Pre,
   Callout,
   ProsCard,
   ConsCard,
@@ -393,23 +413,30 @@ export const globalComponents = {
   Reminder,
 };
 
-// export function CustomMDX(props) {
-//   return (
-//     <MDXRemote
-//       {...props}
-//       components={{ ...components, ...(props.components || {}) }}
-//     />
-//   );
-// }
-
-// interface Props {
-//   mdxSource: MDXRemoteSerializeResult;
-// }
-
-// export default function CustomMDX({mdxSource} : Props) {
-//   return (
-//     <div>
-//       <MDXRemote {...mdxSource} components={{...globalComponents}} />
-//     </div>
-//   );
-// }
+export default function CustomMDX({ source }: any) {
+  return (
+    <div>
+      <MDXRemote
+        source={source}
+        components={{ ...globalComponents } as any}
+        options={{
+          mdxOptions: {
+            rehypePlugins: [
+              remarkRehype,
+              [
+                rehypePrettyCode,
+                {
+                  // https://rehype-pretty.pages.dev/#usage
+                  theme: "github-dark",
+                  keepBackground: false,
+                  filterMetaString: (string: string) =>
+                    string.replace(/filename="[^"]*"/, ""),
+                },
+              ],
+            ],
+          },
+        }}
+      />
+    </div>
+  );
+}

@@ -1,4 +1,5 @@
 // import CustomMDX from "@/components/mdx";
+import CustomMDX from "@/components/mdx";
 import { getPost } from "@/data/blog";
 import { DATA } from "@/data/resume";
 import { formatDate } from "@/lib/utils";
@@ -96,8 +97,10 @@ export default async function Blog({
       </div>
       <article
         className="prose dark:prose-invert"
-        dangerouslySetInnerHTML={{ __html: post.source }}
-      ></article>
+        // dangerouslySetInnerHTML={{ __html: post.source }}
+      >
+      <CustomMDX source={post.source} />
+      </article>
     </section>
   );
 }
