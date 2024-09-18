@@ -7,7 +7,7 @@ import Link from "next/link";
 import React, { ReactNode } from "react";
 import rehypePrettyCode from "rehype-pretty-code";
 import remarkRehype from "remark-rehype";
-import { CopyButton } from "./copy-button";
+import { CopyButton, CopyToClipboard } from "./copy-button";
 import { LiveCode } from "./sandpack";
 import { TweetComponent } from "./tweet";
 
@@ -369,18 +369,39 @@ const ConsCard: React.FC<ConsCardProps> = ({ title, cons }) => {
   );
 };
 
-function Pre({
-  children,
-  raw,
-  buttonClasses = "absolute top-3 right-3 bg-zinc-900",
-  ...props
-}: any) {
-  return (
-    <pre {...props} className={clsx("relative", props.className)}>
-      {children}
-      <CopyButton text={children} className={buttonClasses} />
-    </pre>
-  );
+// function Pre({
+//   children,
+//   raw,
+//   buttonClasses = "absolute top-3 right-3 bg-zinc-900",
+//   ...props
+// }: any) {
+//   return (
+//     <pre {...props} className={clsx("relative", props.className)}>
+//       {children}
+//       <CopyButton text={children} className={buttonClasses} />
+//     </pre>
+//   );
+// }
+
+
+interface IPre {
+	children: React.ReactElement
+	theme: string
+	showLineNumbers: boolean
+}
+
+export const Pre = ({ children, theme, showLineNumbers, ...props }: IPre) => {
+	return (
+		<CopyToClipboard>
+			<pre
+				className={`px-4 py-3 overflow-x-auto rounded-lg font-jetbrains ${
+					theme ? `${theme}-theme` : 'bg-syntaxBg'
+				} ${showLineNumbers ? 'line-numbers' : ''}`}
+			>
+				{children}
+			</pre>
+		</CopyToClipboard>
+	)
 }
 
 export const globalComponents = {
@@ -392,7 +413,7 @@ export const globalComponents = {
   h6: createHeading(6),
   Image: RoundedImage,
   a: CustomLink,
-  // pre: Pre,
+  pre: Pre,
   Callout,
   ProsCard,
   ConsCard,
@@ -431,6 +452,7 @@ export default function CustomMDX({ source }: any) {
                   keepBackground: false,
                   filterMetaString: (string: string) =>
                     string.replace(/filename="[^"]*"/, ""),
+                  
                 },
               ],
             ],
