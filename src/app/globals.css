@@ -404,3 +404,7 @@ p {
 article p {
   @apply leading-9;
 }
+
+.prose :where(figure):not(:where([class~="not-prose"], [class~="not-prose"] *)){
+  margin: 0;
+}

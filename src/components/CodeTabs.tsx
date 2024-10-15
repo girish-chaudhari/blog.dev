@@ -33,7 +33,7 @@ const Tabs = ({ children, defaultTab = 0 }:
           </button>
         ))}
       </div>
-      <div className="py-4">
+      <div >
         {children[activeTab]}
       </div>
     </div>
