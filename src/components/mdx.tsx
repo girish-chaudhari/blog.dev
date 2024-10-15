@@ -10,6 +10,10 @@ import remarkRehype from "remark-rehype";
 import { CopyToClipboard } from "./copy-button";
 import { LiveCode } from "./sandpack";
 import { TweetComponent } from "./tweet";
+import TwitterEmbed from "./react-tweet";
+// import { Tabs, TabsContent, TabsList } from "./ui/tabs";
+
+import { Tab, Tabs } from "./CodeTabs";
 
 function Table({ data }: { data: { headers: string[]; rows: string[][] } }) {
 	let headers = data.headers.map((header, index) => (
@@ -78,9 +82,11 @@ function createHeading(level: number) {
 					href: `#${slug}`,
 					key: `link-${slug}`,
 					className: "anchor",
-				}),
-			],
+				},
 			children,
+		),
+			],
+			// children,
 		);
 	};
 	Heading.displayName = `Heading${level}`;
@@ -214,22 +220,8 @@ const CodeSandboxEmbed: React.FC<CodeSandboxEmbedProps> = ({ sandboxId }) => {
 	);
 };
 
-interface TwitterEmbedProps {
-	tweetId: string;
-}
 
-const TwitterEmbed: React.FC<TwitterEmbedProps> = ({ tweetId }) => {
-	return (
-		<blockquote className="twitter-tweet">
-			<a href={`https://twitter.com/statuses/${tweetId}`}>Tweet</a>
-			<script
-				async
-				src="https://platform.twitter.com/widgets.js"
-				charSet="utf-8"
-			></script>
-		</blockquote>
-	);
-};
+
 
 interface QuoteProps {
 	text: string;
@@ -369,39 +361,83 @@ const ConsCard: React.FC<ConsCardProps> = ({ title, cons }) => {
 	);
 };
 
-// function Pre({
-//   children,
-//   raw,
-//   buttonClasses = "absolute top-3 right-3 bg-zinc-900",
-//   ...props
-// }: any) {
-//   return (
-//     <pre {...props} className={clsx("relative", props.className)}>
-//       {children}
-//       <CopyButton text={children} className={buttonClasses} />
-//     </pre>
-//   );
-// }
 
 interface IPre {
-	children: React.ReactElement;
-	theme: string;
-	showLineNumbers: boolean;
+  children: React.ReactElement;
+  theme?: string;
+  showLineNumbers?: boolean;
+  filename?: string; // Adding the filename prop
 }
 
-export const Pre = ({ children, theme, showLineNumbers, ...props }: IPre) => {
+export const Pre: React.FC<IPre> = ({
+  children,
+  theme = "default", // Default theme if none is provided
+  showLineNumbers = false, // Default to no line numbers
+  filename, // Optional filename
+  ...props
+}) => {
+  return (
+    <div className="code-block-container">
+      {/* {title && <div className="code-block-header">{title}</div>} */}
+      <CopyToClipboard>
+        <pre
+          className={`px-4 py-3 overflow-x-auto rounded-lg font-jetbrains ${
+            theme ? `${theme}-theme` : "bg-syntaxBg"
+          } ${showLineNumbers ? "line-numbers" : ""}`}
+          {...props}
+        >
+          {children}
+        </pre>
+      </CopyToClipboard>
+    </div>
+  );
+};
+interface VideoProps  {
+src: ""
+} 
+
+const Video: React.FC<VideoProps> = ({src = ""}) => {
 	return (
-		<CopyToClipboard>
-			<pre
-				className={`px-4 py-3 overflow-x-auto rounded-lg font-jetbrains ${
-					theme ? `${theme}-theme` : "bg-syntaxBg"
-				} ${showLineNumbers ? "line-numbers" : ""}`}
-			>
-				{children}
-			</pre>
-		</CopyToClipboard>
+		<div>
+			<video  width="100%" controls>
+				<source src={src} type="video/mp4" />
+				Your browser does not support the video tag.
+			</video>
+		</div>
 	);
 };
+
+// const TabsComponent = ({ }) => {
+// 	return <>
+// 	<Tabs defaultValue="account" className="w-[400px]">
+//   <TabsList>
+//     <TabsTrigger value="account">Account</TabsTrigger>
+//     <TabsTrigger value="password">Password</TabsTrigger>
+//   </TabsList>
+//   <TabsContent value="account">Make changes to your account here.</TabsContent>
+//   <TabsContent value="password">Change your password here.</TabsContent>
+// </Tabs></>
+// }
+
+interface TabsItemsProps {
+	label:string,
+	children: React.ReactNode
+}
+
+// const TabsItemComponent = ({
+// 	label, children
+// }) => {
+// 	return (
+// 		<>
+// 		<TabsList>
+//     <TabsTrigger value="account">Account</TabsTrigger>
+//     <TabsTrigger value="password">Password</TabsTrigger>
+//   </TabsList>
+//   <TabsContent value="account">Make changes to your account here.</TabsContent>
+//   <TabsContent value="password">Change your password here.</TabsContent>
+// 	</>
+// 	)
+// }
 
 export const globalComponents = {
 	h1: createHeading(1),
@@ -421,6 +457,14 @@ export const globalComponents = {
 	StaticTweet: TweetComponent,
 	YouTube: YouTubeEmbed,
 	Checklist,
+	Video,
+	// Tabs,
+	// TabItem: TabsItemComponent,
+Tab,
+Tabs,
+	// Tabs,
+	// TabsList,
+	// TabsContent,
 	// Toggle,
 	Todo,
 	NumberedList,
@@ -449,8 +493,9 @@ export default function CustomMDX({ source }: any) {
 									// https://rehype-pretty.pages.dev/#usage
 									theme: "github-dark",
 									keepBackground: false,
-									filterMetaString: (string: string) =>
-										string.replace(/filename="[^"]*"/, ""),
+									filterMetaString: (string:string) => string.replace(/filename="[^"]*"/, ""),
+									// filterMetaString: (string: string) =>
+									// 	string.replace(/filename="[^"]*"/, ""),
 								},
 							],
 						],

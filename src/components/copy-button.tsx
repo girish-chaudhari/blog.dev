@@ -43,11 +43,11 @@ export const CopyToClipboard = ({ children }: ICopyToClipboard) => {
 					aria-label="Copy code"
 					type="button"
 					className={clsx(
-						"absolute right-2 top-2 w-8 h-8 p-1 rounded border-2 bg-gray-700 dark:bg-gray-800",
-						{
+						"absolute right-2 top-2 w-8 h-8 p-1.5 rounded bg-gray-700 dark:bg-gray-800 z-10",
+						// {
 							
-							"hover:border-gray-300": !copied,
-						},
+						// 	"hover:border-gray-300": !copied,
+						// },
 					)}
 					onClick={onCopy}
 				>
@@ -58,7 +58,7 @@ export const CopyToClipboard = ({ children }: ICopyToClipboard) => {
             })} />
 					) : (
 						<>
-							<Copy className="h-5 w-5" /> 
+							<Copy className="h-5 w-5 text-slate-300" /> 
 						</>
 					)}
 				</button>

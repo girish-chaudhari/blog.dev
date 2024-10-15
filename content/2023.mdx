@@ -1,271 +1,689 @@
 ---
-title: '2023 Blog Refresh'
+title: 'Rehype Pretty Code'
 publishedAt: '2023-11-19'
-summary: 'Including some of my latest hot takes (okay they are pretty mild).'
+summary: Beautiful code blocks for Markdown or MDX powered by the Shiki syntax highlighter.
+template: doc
 ---
 
-I updated my blog this weekend and wanted to share some thoughts along the way:
+[`rehype-pretty-code`](https://github.com/rehype-pretty/rehype-pretty-code) is a Rehype plugin
+powered by the [`shiki`](https://github.com/shikijs/shiki) syntax highlighter that provides beautiful code blocks for Markdown or MDX. It works on both the server at build-time (avoiding runtime syntax highlighting) and on the client for dynamic highlighting.
 
-- [Content Management](#content-management)
-- [Performance](#performance)
-- [Opinions](#opinions)
+## Editor-Grade Highlighting
 
-<Callout emoji="⚠️">
+Enjoy the accuracy and granularity of VS Code's syntax highlighting engine and the popularity
+of its themes ecosystem - use any VSCode theme you want!
 
-**Disclaimer:** My site is my “breakable toy”. I enjoy and _intentionally_ change technology and try new patterns here. I'd encourage you to do the same and then write about why you made those choices.
 
-</Callout>
+## Line Numbers and Line Highlighting
 
-## Content Management
+Draw attention to a particular line of code.
 
-I've moved my content from HTML to vanilla Markdown, to MDX, to a CMS, and back to MDX over the years. My content requirements as of now are:
+```ts {4} showLineNumbers
+import { useFloating } from "@floating-ui/react";
 
-1. Written in Markdown¹
-2. Support for syntax highlighting, embedded tweets, and other components
-3. Managed through version control²
-4. Minimal external dependencies
+function MyComponent() {
+  const { refs, floatingStyles } = useFloating();
 
-My goal was to simplify without giving up too many features.
-
-### Retrieving Content
-
-You can go surprisingly far with just Node.js and JavaScript. You'll notice a theme start to emerge in this blog post: fewer dependencies, and more copy/paste-able code.
-
-I removed the following libraries:
-
-- `contentlayer`
-- `next-contentlayer`
-- `rehype-autolink-headings`
-- `rehype-pretty-code`
-- `rehype-slug`
-- `remark-gfm`
-- `shiki`
-
-I was still able to maintain almost all of my content requirements with not much code. For example, here's how I'm able to retrieve all of my blog posts:
-
-```js {1-3,4} title="test" /getMDXFiles/ showLineNumbers
-import fs from 'fs';
-import path from 'path';
-
-function getMDXFiles(dir) {
-  return fs.readdirSync(dir).filter((file) => path.extname(file) === '.mdx');
+  return (
+    <>
+      <div ref={refs.setReference} />
+      <div ref={refs.setFloating} style={floatingStyles} />
+    </>
+  );
 }
+```
 
-function readMDXFile(filePath) {
-  let rawContent = fs.readFileSync(filePath, 'utf-8');
-  return parseFrontmatter(rawContent);
+## Word Highlighting
+
+Draw attention to a particular word or series of characters.
+
+```ts /floatingStyles/
+import { useFloating } from "@floating-ui/react";
+
+function MyComponent() {
+  const { refs, floatingStyles } = useFloating();
+
+  return (
+    <>
+      <div ref={refs.setReference} />
+      <div ref={refs.setFloating} style={floatingStyles} />
+    </>
+  );
 }
+```
 
-function getMDXData(dir) {
-  let mdxFiles = getMDXFiles(dir);
-  return mdxFiles.map((file) => {
-    let { metadata, content } = readMDXFile(path.join(dir, file));
-    let slug = path.basename(file, path.extname(file));
-    return {
-      metadata,
-      slug,
-      content,
+## Inline Code Highlighting
+
+The result of `[1, 2, 3].join('-'){:js}` is `'1-2-3'{:js}`.
+
+### Context Aware Inline Code
+
+For instance, if you had the following code block:
+
+```js
+function getStringLength(str) {
+  return str.length;
+}
+```
+
+When we refer to `getStringLength{:.entity.name.function}` as a plain variable,
+we can color it as a function. Same with `function{:.keyword}`, or
+`str{:.variable.parameter}` vs. `str{:.variable.other.object}`, etc. This allows
+you to semantically tie inline code with the nearest code block it's referring
+to.
+
+## ANSI Highlighting
+
+```ansi
+[0;36m  vite v5.0.0[0;32m dev server running at:[0m
+
+  > Local: [0;36mhttp://localhost:[0;36;1m3000[0;36m/[0m
+  > Network: [0;2muse `--host` to expose[0m
+
+  [0;36mready in 125ms.[0m
+
+[0;2m8:38:02 PM[0m [0;36;1m[vite][0m [0;32mhmr update [0;2m/src/App.jsx
+```
+
+Inline ANSI: `> Local: [0;36mhttp://localhost:[0;36;1m3000[0;36m/[0m{:ansi}`
+
+---
+
+## Installation
+
+Install via your terminal:
+
+<Tabs defaultTab={0}>
+  <Tab label="app.js">
+    ```javascript
+    import React from 'react';
+
+    const App = () => {
+      return <div>Hello World</div>;
     };
-  });
+
+    export default App;
+    ```
+  </Tab>
+  <Tab label="styles.css">
+    ```css
+    body {
+      background-color: #f0f0f0;
+    }
+    ```
+  </Tab>
+  <Tab label="index.html">
+    ```html
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Document</title>
+    </head>
+    <body>
+      <div id="root"></div>
+    </body>
+    </html>
+    ```
+  </Tab>
+</Tabs>
+
+This package is ESM-only and currently supports `shiki{:.string}`
+`^1.0.0{:.string}`.
+
+> To use the latest version in Next.js, ensure your config file is `ESM`:
+> `next.config.mjs`. Here's a full example:
+> [rehype-pretty-code/examples/next/next.config.mjs](https://github.com/atomiks/rehype-pretty-code/blob/master/examples/next/next.config.mjs)
+
+## Usage
+
+The following works both on the server and on the client.
+
+```js /rehypePrettyCode/
+import { unified } from "unified";
+import remarkParse from "remark-parse";
+import remarkRehype from "remark-rehype";
+import rehypeStringify from "rehype-stringify";
+import rehypePrettyCode from "rehype-pretty-code";
+
+async function main() {
+  const file = await unified()
+    .use(remarkParse)
+    .use(remarkRehype)
+    .use(rehypePrettyCode, {
+      // See Options section below.
+    })
+    .use(rehypeStringify)
+    .process("`const numbers = [1, 2, 3]{:js}`");
+
+  console.log(String(file));
 }
 
-export function getBlogPosts() {
-  return getMDXData(path.join(process.cwd(), 'content'));
+main();
+```
+
+Note that `unified{:.string}` **v11** is used as a dependency internally.
+Ensure your `unified{:.string}` version is compatible.
+
+### MDX
+
+The following example shows how to use this package with Next.js.
+
+```js title="next.config.mjs"
+import nextMDX from "@next/mdx";
+import rehypePrettyCode from "rehype-pretty-code";
+
+/** @type {import('rehype-pretty-code').Options} */
+const options = {
+  // See Options section below.
+};
+
+const withMDX = nextMDX({
+  extension: /\.mdx?$/,
+  options: {
+    remarkPlugins: [],
+    rehypePlugins: [[rehypePrettyCode, options]],
+  },
+});
+
+/** @type {import('next').NextConfig} */
+const nextConfig = { reactStrictMode: true };
+
+export default withMDX(nextConfig);
+```
+
+Disable the `mdxRs{:.meta.object-literal.key}` option if Rehype plugins do not work.
+
+## Styles
+
+This library is unstyled. This means it does not provide a CSS file that
+applies styling by default. Rather, it provides logical attributes that you
+use to apply the styling yourself.
+
+For instance, the following CSS prevents overflow and adds padding:
+
+```css
+pre {
+  overflow-x: auto;
+  padding: 1rem 0;
+}
+
+pre [data-line] {
+  padding: 0 1rem;
 }
 ```
 
-That's not too bad. So what am I missing? Well, Contentlayer gives you Fast Refresh for your content. That's nice. You can [workaround this](https://github.com/gaearon/overreacted.io/pull/797) or just use `@next/mdx`, which I might do. Contentlayer has other features, too, but they're unnecessary for my blog.
+Features including highlighted lines, chars, and line numbers expose data
+attributes that enable you to add your own styling, which are explained below.
 
-### Remark and Rehype
+## Options
 
-What about the AST modifications for auto-linking headings, adding IDs, and supporting syntax highlighting? I don't know why I didn't think of this before, but you can just… use React components.
+```ts
+interface Options {
+  grid?: boolean;
+  theme?: Theme | Record<string, Theme>;
+  keepBackground?: boolean;
+  bypassInlineCode?: boolean;
+  defaultLang?: string | { block?: string; inline?: string };
+  tokensMap?: Record<string, string>;
+  transformers?: ShikiTransformer[];
+  filterMetaString?(str: string): string;
+  getHighlighter?(options: BundledHighlighterOptions): Promise<Highlighter>;
+  onVisitLine?(element: LineElement): void;
+  onVisitHighlightedLine?(element: LineElement): void;
+  onVisitHighlightedChars?(element: CharsElement, id: string | undefined): void;
+  onVisitTitle?(element: Element): void;
+  onVisitCaption?(element: Element): void;
+}
+```
 
-```jsx
-import { highlight } from 'sugar-high'; // 1KB new dependency
+### `grid`
 
-// This replaces rehype-pretty-code and shiki
-function Code({ children, ...props }) {
-  let codeHTML = highlight(children);
-  return <code dangerouslySetInnerHTML={{ __html: codeHTML }} {...props} />;
+A grid style is present by default which allows line highlighting to span the
+entire width of a horizontally-scrollable code block.
+
+You can disable this setting if necessary:
+
+```js
+const options = {
+  grid: false,
+};
+```
+
+### `theme`
+
+The default theme is `github-dark-dimmed{:.string}`. Shiki has a bunch of
+[pre-packaged themes](https://shiki.style/themes#themes),
+which can be specified as a plain string:
+
+```js
+const options = {
+  theme: "one-dark-pro",
+};
+```
+
+You can use your own theme as well by passing the theme JSON:
+
+```js
+const options = {
+  theme: JSON.parse(fs.readFileSync("./themes/moonlight-ii.json", "utf-8")),
+};
+```
+
+### `keepBackground`
+
+To apply a custom background instead of inheriting the background from the
+theme:
+
+```js
+const options = {
+  keepBackground: false,
+};
+```
+
+### `bypassInlineCode`
+
+Skip inline code highlighting:
+
+```js
+const options = {
+  bypassInlineCode: true,
+};
+```
+
+### `defaultLang`
+
+When no code language is specified, inline code or code blocks will not be
+themed (nor will the background), which may appear incongruous with others.
+
+In this case, you can specify a default language:
+
+```js
+const options = {
+  defaultLang: "plaintext",
+};
+```
+
+Or you can also specify default languages for inline code and code blocks
+separately:
+
+```js
+const options = {
+  defaultLang: {
+    block: "plaintext",
+    inline: "plaintext",
+  },
+};
+```
+
+### `transformers`
+
+[Transformers](https://shiki.style/guide/transformers#transformers) are a
+Shiki-native way to manipulate the `hAST` tree of the code blocks and further
+extend the behavior of this plugin. The
+[`@shikijs/transformers`](https://npm.im/@shikijs/transformers)
+package provides some useful transformers.
+
+```js
+import { transformerNotationDiff } from '@shikijs/transformers';
+
+const options = {
+  transformers: [transformerNotationDiff()],
+};
+```
+
+## Meta Strings
+
+Code blocks are configured via the meta string on the top codeblock fence.
+
+> If your library also parses code blocks' meta strings, it may
+> [cause conflicts](https://github.com/atomiks/rehype-pretty-code/issues/52)
+> with `rehype-pretty-code`. This option allows you to filter out some part of
+> the meta string before the library starts parsing it.
+>
+> ```js
+> const options = {
+>   filterMetaString: (string) => string.replace(/filename="[^"]*"/, ""),
+> };
+> ```
+
+#### Highlight Lines
+
+Place a numeric range inside `{}`.
+
+````md
+```js {1-3,4}
+
+```
+````
+
+**Styling**: The line `<span>{:html}` receives a `data-highlighted-line`
+attribute that enables you to style via CSS.
+
+#### Group Highlighted Lines By Id
+
+Place an id after `#` after the `{}`. This allows you to color or style lines
+differently based on their id.
+
+````md
+```js {1,2}#a {3,4}#b
+
+```
+````
+
+**Styling**: The line `<span>{:html}` receives a
+`data-highlighted-line-id="<id>"` attribute that enables you to style via CSS.
+
+#### Highlight Chars
+
+You can use either `/`:
+
+````md
+```js /carrot/
+
+```
+````
+
+Or `"` as a delimiter:
+
+````md
+```js "carrot"
+
+```
+````
+
+Different segments of chars can also be highlighted:
+
+````md
+```js /carrot/ /apple/
+
+```
+````
+
+**Styling**: The chars `<span>{:html}` receives a `data-highlighted-chars`
+attribute to style via CSS.
+
+To highlight only the third to fifth instances of `carrot`, a numeric range can
+be placed after the last `/`.
+
+````md
+```js /carrot/3-5
+
+```
+````
+
+Highlight only the third to fifth instances of `carrot` and any instances of
+`apple`.
+
+````md
+```js /carrot/3-5 /apple/
+
+```
+````
+
+#### Group Highlighted Chars By Id
+
+Place an id after `#` after the chars. This allows you to color chars
+differently based on their id.
+
+````md
+```js /age/#v /name/#v /setAge/#s /setName/#s /50/#i /"Taylor"/#i
+const [age, setAge] = useState(50);
+const [name, setName] = useState("Taylor");
+```
+````
+
+```js /age/#v /name/#v /setAge/#s /setName/#s /50/#i /"Taylor"/#i
+const [age, setAge] = useState(50);
+const [name, setName] = useState("Taylor");
+```
+
+**Styling**: The chars `<span>{:html}` receives a `data-chars-id="<id>"`
+attribute to style via CSS.
+
+#### Highlight Inline Code
+
+Append `\{:lang}` (e.g. `\{:js}`) to the end of inline code to highlight it like
+a regular code block.
+
+```md
+This is an array `[1, 2, 3]{:js}` of numbers 1 through 3.
+```
+
+#### Highlight Plain Text
+
+Append `\{:.token}` to the end of the inline code to highlight it based on a
+token specified in your VS Code theme. Tokens start with a `.` to differentiate
+them from a language.
+
+```md
+The name of the function is `getStringLength{:.entity.name.function}`.
+```
+
+You can create a map of tokens to shorten this usage throughout your docs:
+
+```js
+const options = {
+  tokensMap: {
+    fn: "entity.name.function",
+  },
+};
+```
+
+```md
+The name of the function is `getStringLength{:.fn}`.
+```
+
+#### Titles
+
+Add a file title to your code block, with text inside double quotes (`""`):
+
+````md
+```js title="..."
+
+```
+````
+
+#### Captions
+
+Add a caption underneath your code block, with text inside double quotes (`""`):
+
+````md
+```js caption="..."
+
+```
+````
+
+## Line Numbers
+
+CSS counters can be used to add line numbers.
+
+```css {2,6-7}
+code[data-line-numbers] {
+  counter-reset: line;
 }
 
-// This replaces rehype-slug
-function slugify(str) {
-  return str
-    .toString()
-    .toLowerCase()
-    .trim() // Remove whitespace from both ends of a string
-    .replace(/\s+/g, '-') // Replace spaces with -
-    .replace(/&/g, '-and-') // Replace & with 'and'
-    .replace(/[^\w\-]+/g, '') // Remove all non-word characters except for -
-    .replace(/\-\-+/g, '-'); // Replace multiple - with single -
+code[data-line-numbers] > [data-line]::before {
+  counter-increment: line;
+  content: counter(line);
+
+  /* Other styling */
+  display: inline-block;
+  width: 0.75rem;
+  margin-right: 2rem;
+  text-align: right;
+  color: gray;
 }
 
-// This replaces rehype-autolink-headings
-function createHeading(level) {
-  return ({ children }) => {
-    let slug = slugify(children);
-    return React.createElement(
-      `h${level}`,
-      { id: slug },
-      [
-        React.createElement('a', {
-          href: `#${slug}`,
-          key: `link-${slug}`,
-          className: 'anchor',
-        }),
+code[data-line-numbers-max-digits="2"] > [data-line]::before {
+  width: 1.25rem;
+}
+
+code[data-line-numbers-max-digits="3"] > [data-line]::before {
+  width: 1.75rem;
+}
+
+code[data-line-numbers-max-digits="4"] > [data-line]::before {
+  width: 2.25rem;
+}
+```
+
+If you want to conditionally show them, use `showLineNumbers`:
+
+````md
+```js showLineNumbers
+
+```
+````
+
+**Styling**: `<code>{:html}` will have attributes `data-line-numbers` and
+`data-line-numbers-max-digits="n"`.
+
+If you want to start line numbers at a specific number, use
+`showLineNumbers{number}`:
+
+````md
+```js showLineNumbers{number}
+
+```
+````
+
+## Multiple Themes (Dark and Light Mode)
+
+Pass your themes to `theme{:.meta.object-literal.key}`, where the keys represent
+the color mode:
+
+```js
+const options = {
+  theme: {
+    dark: "github-dark-dimmed",
+    light: "github-light",
+  },
+};
+```
+
+Now, use the following CSS to display the variable colors Ă˘âŹâ if a space is found
+in the theme name, then CSS variable keys based on the object are available
+([more info](https://shiki.style/guide/dual-themes#light-dark-dual-themes)):
+
+```scss
+code[data-theme*=" "],
+code[data-theme*=" "] span {
+  color: var(--shiki-light);
+  background-color: var(--shiki-light-bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  code[data-theme*=" "],
+  code[data-theme*=" "] span {
+    color: var(--shiki-dark);
+    background-color: var(--shiki-dark-bg);
+  }
+}
+```
+
+The `<code>{:html}` and `<pre>{:html}` elements will have the data attribute
+`data-theme="...themes"`, listing each theme value space-separated:
+
+```html
+<code data-theme="github-dark-dimmed github-light"></code>
+```
+
+## Visitor Hooks
+
+To customize the HTML output, you can use visitor callback hooks to manipulate
+the [hAST elements](https://github.com/syntax-tree/hast#element) directly:
+
+```js
+const options = {
+  onVisitLine(element) {
+    console.log("Visited line");
+  },
+  onVisitHighlightedLine(element) {
+    console.log("Visited highlighted line");
+  },
+  onVisitHighlightedChars(element) {
+    console.log("Visited highlighted chars");
+  },
+  onVisitTitle(element) {
+    console.log("Visited title");
+  },
+  onVisitCaption(element) {
+    console.log("Visited caption");
+  },
+};
+```
+
+## Custom Highlighter
+
+To completely configure the highlighter, use the
+`getHighlighter{:.entity.name.function}` option. This is helpful if you'd like
+to configure other Shiki options, such as `langs{:.meta.object-literal.key}`.
+
+```js
+import { getHighlighter } from "shiki";
+
+const options = {
+  getHighlighter: (options) =>
+    getHighlighter({
+      ...options,
+      langs: [
+        "plaintext",
+        async () => JSON.parse(await readFile("my-grammar.json", "utf-8")),
       ],
-      children
-    );
-  };
+    }),
+};
+```
+
+## React Server Component
+
+The [usage](#usage) works directly in React Server Components. Here's an example:
+
+```tsx title="code.tsx"
+import * as React from "react";
+import { unified } from "unified";
+import remarkParse from "remark-parse";
+import remarkRehype from "remark-rehype";
+import rehypeStringify from "rehype-stringify";
+import rehypePrettyCode from "rehype-pretty-code";
+
+export async function Code({ code }: { code: string }) {
+  const highlightedCode = await highlightCode(code);
+  return (
+    <section
+      dangerouslySetInnerHTML={{
+        __html: highlightedCode,
+      }}
+    />
+  );
+}
+
+async function highlightCode(code: string) {
+  const file = await unified()
+    .use(remarkParse)
+    .use(remarkRehype)
+    .use(rehypePrettyCode, {
+      keepBackground: false,
+    })
+    .use(rehypeStringify)
+    .process(code);
+
+  return String(file);
 }
 ```
 
-Oh and that `remark-gfm` I was using for the GitHub style Markdown tables? Again, you can use a React component for that.
+Then, import the RSC into a page or another component:
 
-```jsx
-function Table({ data }) {
-  let headers = data.headers.map((header, index) => (
-    <th key={index}>{header}</th>
-  ));
-  let rows = data.rows.map((row, index) => (
-    <tr key={index}>
-      {row.map((cell, cellIndex) => (
-        <td key={cellIndex}>{cell}</td>
-      ))}
-    </tr>
-  ));
+```tsx src/app/rsc/page.tsx
+import * as React from "react";
+import { Code } from "./code.tsx";
 
+export default async function Page() {
   return (
-    <table>
-      <thead>
-        <tr>{headers}</tr>
-      </thead>
-      <tbody>{rows}</tbody>
-    </table>
+    <main>
+      <Code code="`const numbers = [1, 2, 3]{:js}`" />
+    </main>
   );
 }
 ```
-
-### Dependency Minimalism
-
-Why go through all of this work to delete dependencies?
-
-After having a blog for 10 years, I've gained a new appreciation for keeping things simple. Now, I'm not going _full_ minimalist here. I still want nice things. But I'm taking more opportunities to simplify and keep more code managed in the repo.
-
-Shoutout to [next-mdx-remote](https://github.com/hashicorp/next-mdx-remote) and [react-tweet](https://react-tweet.vercel.app/).
-
-## Performance
-
-Earlier this year, I moved this blog to the [Next.js App Router](https://nextjs.org/docs/app). That came with a subtle but important change: [React Server Components](https://nextjs.org/docs/app/building-your-application/rendering/server-components) by default.
-
-### Server Components
-
-Server Components are fun. For example, I can embed tweets inside blog posts:
-
-```jsx
-<Tweet id="1457032789883187201" />
-```
-
-The `Tweet` component handles both data fetching _and_ creating UI, all bundled up in a handy npm package (worth an exception here). Notably, additional Server Components added to my pages aren't increasing the client-side JavaScript bundle. This “templating” remains server-only.
-
-Another example is on [my work page](https://leerob.io/work). I love that I can drop this component in anywhere:
-
-```jsx
-async function Stars() {
-  let res = await fetch('https://api.github.com/repos/vercel/next.js');
-  let json = await res.json();
-  let count = Math.round(json.stargazers_count / 1000);
-  return `${count}k stars`;
-}
-```
-
-### Partial Prerendering
-
-We're also working on something new in Next.js I'm now using here. It enables Next.js to prerender as much of the page as possible to static, leaving holes for dynamic components.
-
-For example, 98% of this blog post page is work that can be prerendering during the build. However, those view counts at the top of the page should be dynamic on every request. With [Partial Prerendering](https://www.partialprerendering.com/), the code for that looks like:
-
-```tsx
-async function Views({ slug }: { slug: string }) {
-  let views = await getViewsCount();
-  incrementViews(slug);
-  // ...
-}
-
-export default function Blog({ params }) {
-  let post = getBlogPosts().find((post) => post.slug === params.slug);
-  // ...
-
-  return (
-    <section>
-      <Suspense fallback={<p className="h-5" />}>
-        <Views slug={post.slug} />
-      </Suspense>
-      <article>{post.content}</article>
-    </section>
-  );
-}
-```
-
-Everything up to the `Suspense` boundary, including the `fallback`, can be prerendered. Then, when the request happens, the static shell is instantly shown, followed by the dynamic content (views) streaming in after the fact.
-
-`getViewsCount` signals to Next.js that it's dynamic through `noStore()`:
-
-```jsx
-export async function getViewsCount() {
-  noStore();
-  let data = await sql`
-    SELECT slug, count
-    FROM views
-  `;
-
-  return data.rows as { slug: string; count: number }[];
-}
-```
-
-And `incrementViews` is a Server Action that can be called like any JavaScript function:
-
-```jsx
-'use server';
-
-import { sql } from '@vercel/postgres';
-
-export async function increment(slug: string) {
-  await sql`
-    INSERT INTO views (slug, count)
-    VALUES (${slug}, 1)
-    ON CONFLICT (slug)
-    DO UPDATE SET count = views.count + 1
-  `;
-}
-```
-
-I'm really happy with this approach. In the past, I had to include more dependencies like `swr` and add additional client-side JavaScript to achieve this. Partial Prerendering feels fast, without giving up the dynamic view counts that I love.
-
-<StaticTweet id="1723494155220054489" />
-
-## Opinions
-
-There's an assortment of other opinions I've included here now:
-
-- **Prefer `let` over `const`:** It's fewer characters to write. I'm lazy. Also, this isn't a production codebase here or anything. [Nice post here](https://overreacted.io/on-let-vs-const/) on this topic.
-- **Prefer copy/paste over the wrong abstraction:** I removed `date-fns`, `clsx` / `classnames`, and `gray-matter` for simple copy-pastable alternatives. Sure, they don't support every single feature. But, I don't need it. And if I do later, maybe I'll bring it back.
-- **Prefer loading SVGs as images:** Okay, this one has been hard for me. I've gotten so used to inlining SVGs in React. But starting to change my mind. [Related reading here](https://kurtextrem.de/posts/svg-in-js) and [on svg sprites](https://benadam.me/thoughts/react-svg-sprites/).
-- **Prefer larger files versus many components:** Just works for my brain better. Keep code that changes often close together. Your mileage may vary.
-- **Prefer colocating most things in `app/`:** Because, _why not_? Now that it's possible with the App Router I'm probably overusing this, but it feels nice.
-- **Prefer colocating styles with components:** Okay, I've been using Tailwind now for many years, but this is still worth mentioning. Similar to my content evolution, I went from CSS → Sass → styled-components → Chakra → Tailwind. [Give it a shot](https://adamwathan.me/css-utility-classes-and-separation-of-concerns). P.S. LLMs are very good at Tailwind.
-
-## Conclusion
-
-As always, my entire site is [open source](https://github.com/leerob/leerob.io). Feel free to fork it and hack around.
-
-I've also simplified the cloning process by consolidating everything to a single [Postgres database](https://vercel.com/storage/postgres). It's now where blog views, guestbook entries, and redirects are stored. I still like MySQL, just wanted an excuse to use Vercel Postgres more.
-
-See you next year for the 2024 blog refresh 🫡
-
----
-
-¹: Even when I moved to a CMS, I was still writing in MDX. For my developer blog, it's by far the easiest for me to maintain. I've gone the opposite route with custom components backed by a CMS on larger projects, but has always felt unnecessary here.
-
-²: Surprisingly, there still aren't many great git-like workflows for content that I've enjoyed using. Again, for my blog, having the complete version history tracked in git has been very helpful.
