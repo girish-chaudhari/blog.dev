@@ -1,4 +1,4 @@
-import fs from "fs";
+import fs from "fs/promises";  // Use async version of fs
 import matter from "gray-matter";
 import path from "path";
 import rehypePrettyCode from "rehype-pretty-code";
@@ -7,6 +7,10 @@ import remarkParse from "remark-parse";
 import remarkRehype from "remark-rehype";
 import { unified } from "unified";
 import { transformerCopyButton } from "@rehype-pretty/transformers";
+import pLimit from "p-limit";  // Limit concurrency
+
+// Cache to store processed markdown
+const cache = new Map<string, string>();
 
 type Metadata = {
   title: string;
@@ -15,11 +19,12 @@ type Metadata = {
   image?: string;
 };
 
-function getMDXFiles(dir: string) {
-  return fs.readdirSync(dir).filter((file) => path.extname(file) === ".mdx");
+async function getMDXFiles(dir: string): Promise<string[]> {
+  const files = await fs.readdir(dir);  // Asynchronously read files
+  return files.filter((file) => path.extname(file) === ".mdx");
 }
 
-export async function highlightCode(code: string) {
+export async function highlightCode(code: string): Promise<string> {
   const file = await unified()
     .use(remarkParse)
     .use(remarkRehype)
@@ -32,54 +37,63 @@ export async function highlightCode(code: string) {
   return String(file);
 }
 
-export async function markdownToHTML(markdown: string) {
-  const p = await unified()
+export async function markdownToHTML(markdown: string): Promise<string> {
+  if (cache.has(markdown)) {
+    return cache.get(markdown) as string;
+  }
+
+  const result = await unified()
     .use(remarkParse)
     .use(remarkRehype)
     .use(rehypePrettyCode, {
-      // https://rehype-pretty.pages.dev/#usage
       theme: "github-dark",
       keepBackground: false,
       transformers: [
         transformerCopyButton({
           visibility: "hover",
-          feedbackDuration: 3_000,
+          feedbackDuration: 3000,
         }),
       ],
     })
     .use(rehypeStringify)
     .process(markdown);
 
-  return p.toString();
+  const html = result.toString();
+  cache.set(markdown, html);  // Cache the processed result
+  return html;
 }
 
 export async function getPost(slug: string) {
   const filePath = path.join("content", `${slug}.mdx`);
-  let source = fs.readFileSync(filePath, "utf-8");
-  const { content: rawContent, data: metadata } = matter(source);
-  // const content = await markdownToHTML(rawContent);
+  const source = await fs.readFile(filePath, "utf-8");
+  const { content, data: metadata } = matter(source);
+  
   return {
-    source: rawContent,
+    source: content,
     metadata,
     slug,
   };
 }
 
-async function getAllPosts(dir: string) {
-  let mdxFiles = getMDXFiles(dir);
+async function getAllPosts(dir: string): Promise<{ metadata: Metadata; slug: string; source: string }[]> {
+  const mdxFiles = await getMDXFiles(dir);
+  const limit = pLimit(5);  // Limit to 5 concurrent promises
+
   return Promise.all(
-    mdxFiles.map(async (file) => {
-      let slug = path.basename(file, path.extname(file));
-      let { metadata, source } = await getPost(slug);
-      return {
-        metadata,
-        slug,
-        source,
-      };
-    })
+    mdxFiles.map((file) =>
+      limit(async () => {
+        const slug = path.basename(file, path.extname(file));
+        const { metadata, source } = await getPost(slug);
+        return {
+          metadata,
+          slug,
+          source,
+        };
+      })
+    )
   );
 }
 
-export async function getBlogPosts() {
+export async function getBlogPosts(): Promise<{ metadata: Metadata; slug: string; source: string }[]> {
   return getAllPosts(path.join(process.cwd(), "content"));
 }
