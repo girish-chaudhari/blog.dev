@@ -19,6 +19,7 @@ type Metadata = {
   image?: string;
 };
 
+
 async function getMDXFiles(dir: string): Promise<string[]> {
   const files = await fs.readdir(dir);  // Asynchronously read files
   return files.filter((file) => path.extname(file) === ".mdx");
@@ -63,17 +64,30 @@ export async function markdownToHTML(markdown: string): Promise<string> {
   return html;
 }
 
-export async function getPost(slug: string) {
+export async function getPost(slug: string): Promise<{ source: string; metadata: Metadata; slug: string }> {
   const filePath = path.join("content", `${slug}.mdx`);
-  const source = await fs.readFile(filePath, "utf-8");
-  const { content, data: metadata } = matter(source);
-  
-  return {
-    source: content,
-    metadata,
-    slug,
-  };
+  try {
+    const source = await fs.readFile(filePath, "utf-8");
+    const { content, data } = matter(source);
+
+    const metadata: Metadata = {
+      title: data.title,
+      publishedAt: data.publishedAt,
+      summary: data.summary,
+      image: data.image || null,
+    };
+
+    return {
+      source: content,
+      metadata,
+      slug,
+    };
+  } catch (error) {
+    console.error("Error reading file", error);
+    // return null;  // Return null if the post is not found
+  }
 }
+
 
 async function getAllPosts(dir: string): Promise<{ metadata: Metadata; slug: string; source: string }[]> {
   const mdxFiles = await getMDXFiles(dir);
@@ -83,16 +97,23 @@ async function getAllPosts(dir: string): Promise<{ metadata: Metadata; slug: str
     mdxFiles.map((file) =>
       limit(async () => {
         const slug = path.basename(file, path.extname(file));
-        const { metadata, source } = await getPost(slug);
+        const post = await getPost(slug);
+
+        // If getPost returned null, handle it (you could filter out null posts later)
+        if (!post) {
+          throw new Error(`Post not found: ${slug}`);
+        }
+
         return {
-          metadata,
+          metadata: post.metadata, // This now uses the correct Metadata type
           slug,
-          source,
+          source: post.source,
         };
       })
     )
   );
 }
+
 
 export async function getBlogPosts(): Promise<{ metadata: Metadata; slug: string; source: string }[]> {
   return getAllPosts(path.join(process.cwd(), "content"));
