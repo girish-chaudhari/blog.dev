@@ -64,7 +64,7 @@ export async function markdownToHTML(markdown: string): Promise<string> {
   return html;
 }
 
-export async function getPost(slug: string): Promise<{ source: string; metadata: Metadata; slug: string }> {
+export async function getPost(slug: string): Promise<{ source: string; metadata: Metadata; slug: string } | null> {
   const filePath = path.join("content", `${slug}.mdx`);
   try {
     const source = await fs.readFile(filePath, "utf-8");
@@ -84,9 +84,10 @@ export async function getPost(slug: string): Promise<{ source: string; metadata:
     };
   } catch (error) {
     console.error("Error reading file", error);
-    // return null;  // Return null if the post is not found
+    return null;  // Explicitly return null when the post is not found or an error occurs
   }
 }
+
 
 
 async function getAllPosts(dir: string): Promise<{ metadata: Metadata; slug: string; source: string }[]> {

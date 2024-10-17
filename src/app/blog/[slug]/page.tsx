@@ -16,6 +16,10 @@ export async function generateMetadata({
 }): Promise<Metadata | undefined> {
   let post = await getPost(params.slug);
 
+if (!post){
+  return undefined
+}
+
   let {
     title,
     publishedAt: publishedTime,
