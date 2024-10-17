@@ -263,34 +263,34 @@ a > code {
   text-decoration-color: unset !important;
   text-decoration-thickness: unset !important;
 }
-
+/* 
 h1 a,
 h2 a,
 h3 a,
 h4 a,
 h5 a,
 h6 a {
-  text-decoration: none;
+  text-decoration: none !important;
 }
 
-h2::after,
-h3::after,
-h4::after,
-h5::after {
+h2::before,
+h3::before,
+h4::before,
+h5::before {
   content: "#";
   color: #ffffff;
   margin-left: 0.5rem;
   font-size: 1.5rem;
   position: relative;
   visibility: hidden;
-}
+} */
 
-h2:hover::after,
-h3:hover::after,
-h4:hover::after,
-h5:hover::after {
+/* h2:hover::before,
+h3:hover::before,
+h4:hover::before,
+h5:hover::before {
   visibility: visible;
-}
+} */
 
 h3 code {
   @apply !text-lg md:!text-xl;

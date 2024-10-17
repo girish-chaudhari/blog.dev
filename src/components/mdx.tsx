@@ -72,26 +72,35 @@ function slugify(str: string) {
 }
 
 function createHeading(level: number) {
-	const Heading = ({ children }: { children: React.ReactNode }) => {
-		let slug = slugify(children as string);
-		return React.createElement(
-			`h${level}`,
-			{ id: slug },
-			[
-				React.createElement("a", {
-					href: `#${slug}`,
-					key: `link-${slug}`,
-					className: "anchor",
-				},
-			children,
-		),
-			],
-			// children,
-		);
-	};
-	Heading.displayName = `Heading${level}`;
-	return Heading;
+  const Heading = ({ children }: { children: React.ReactNode }) => {
+    // Generate a slug based on the heading text
+    let slug = slugify(children as string);
+
+    return React.createElement(
+      `h${level}`,
+      {
+        id: slug,
+        className: "relative group", // Add Tailwind classes to parent heading
+      },
+      [
+        React.createElement(
+          "a",
+          {
+            href: `#${slug}`,
+            key: `link-${slug}`,
+            className:
+              "before:content-['#'] before:text-gray-700 before:ml-2 before:text-lg before:absolute before:left-[-1.5rem] before:invisible group-hover:before:visible dark:before:text-white no-underline", // Tailwind classes
+          },
+          children
+        ),
+      ]
+    );
+  };
+
+  Heading.displayName = `Heading${level}`;
+  return Heading;
 }
+
 
 const YouTubeEmbed = ({ videoId }: { videoId: string }) => {
 	return (
