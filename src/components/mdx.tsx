@@ -89,7 +89,7 @@ function createHeading(level: number) {
             href: `#${slug}`,
             key: `link-${slug}`,
             className:
-              "before:content-['#'] before:text-gray-700 before:ml-2 before:text-lg before:absolute before:left-[-1.5rem] before:invisible group-hover:before:visible dark:before:text-white no-underline", // Tailwind classes
+             "after:content-['#'] after:text-gray-700 after:ml-2 after:text-lg after:absolute  after:invisible group-hover:after:visible dark:after:text-white no-underline font-bold", //after:left-[-1.5rem]
           },
           children
         ),
