@@ -1,121 +1,90 @@
-import fs from "fs/promises";  // Use async version of fs
-import matter from "gray-matter";
-import path from "path";
-import rehypePrettyCode from "rehype-pretty-code";
-import rehypeStringify from "rehype-stringify";
-import remarkParse from "remark-parse";
-import remarkRehype from "remark-rehype";
-import { unified } from "unified";
-import { transformerCopyButton } from "@rehype-pretty/transformers";
-import pLimit from "p-limit";  // Limit concurrency
-
-// Cache to store processed markdown
-const cache = new Map<string, string>();
+import fs from 'fs'
+import path from 'path'
 
 type Metadata = {
-  title: string;
-  publishedAt: string;
-  summary: string;
-  image?: string;
-};
-
-
-async function getMDXFiles(dir: string): Promise<string[]> {
-  const files = await fs.readdir(dir);  // Asynchronously read files
-  return files.filter((file) => path.extname(file) === ".mdx");
+  title: string
+  publishedAt: string
+  summary: string
+  image?: string
 }
 
-export async function highlightCode(code: string): Promise<string> {
-  const file = await unified()
-    .use(remarkParse)
-    .use(remarkRehype)
-    .use(rehypePrettyCode, {
-      keepBackground: false,
-    })
-    .use(rehypeStringify)
-    .process(code);
+function parseFrontmatter(fileContent: string) {
+  let frontmatterRegex = /---\s*([\s\S]*?)\s*---/
+  let match = frontmatterRegex.exec(fileContent)
+  let frontMatterBlock = match![1]
+  let content = fileContent.replace(frontmatterRegex, '').trim()
+  let frontMatterLines = frontMatterBlock.trim().split('\n')
+  let metadata: Partial<Metadata> = {}
 
-  return String(file);
+  frontMatterLines.forEach((line) => {
+    let [key, ...valueArr] = line.split(': ')
+    let value = valueArr.join(': ').trim()
+    value = value.replace(/^['"](.*)['"]$/, '$1') // Remove quotes
+    metadata[key.trim() as keyof Metadata] = value
+  })
+
+  return { metadata: metadata as Metadata, content }
 }
 
-export async function markdownToHTML(markdown: string): Promise<string> {
-  if (cache.has(markdown)) {
-    return cache.get(markdown) as string;
-  }
-
-  const result = await unified()
-    .use(remarkParse)
-    .use(remarkRehype)
-    .use(rehypePrettyCode, {
-      theme: "github-dark",
-      keepBackground: false,
-      transformers: [
-        transformerCopyButton({
-          visibility: "hover",
-          feedbackDuration: 3000,
-        }),
-      ],
-    })
-    .use(rehypeStringify)
-    .process(markdown);
-
-  const html = result.toString();
-  cache.set(markdown, html);  // Cache the processed result
-  return html;
+function getMDXFiles(dir: fs.PathLike) {
+  return fs.readdirSync(dir).filter((file) => path.extname(file) === '.mdx')
 }
 
-export async function getPost(slug: string): Promise<{ source: string; metadata: Metadata; slug: string } | null> {
-  const filePath = path.join("content", `${slug}.mdx`);
-  try {
-    const source = await fs.readFile(filePath, "utf-8");
-    const { content, data } = matter(source);
+function readMDXFile(filePath: fs.PathOrFileDescriptor) {
+  let rawContent = fs.readFileSync(filePath, 'utf-8')
+  return parseFrontmatter(rawContent)
+}
 
-    const metadata: Metadata = {
-      title: data.title,
-      publishedAt: data.publishedAt,
-      summary: data.summary,
-      image: data.image || null,
-    };
+function getMDXData(dir: string) {
+  let mdxFiles = getMDXFiles(dir)
+  return mdxFiles.map((file) => {
+    let { metadata, content } = readMDXFile(path.join(dir, file))
+    let slug = path.basename(file, path.extname(file))
 
     return {
-      source: content,
       metadata,
       slug,
-    };
-  } catch (error) {
-    console.error("Error reading file", error);
-    return null;  // Explicitly return null when the post is not found or an error occurs
+      content,
+    }
+  })
+}
+
+export function getBlogPosts() {
+  return getMDXData(path.join(process.cwd(), 'content'))
+}
+
+export function formatDate(date: string, includeRelative = false) {
+  let currentDate = new Date()
+  if (!date.includes('T')) {
+    date = `${date}T00:00:00`
   }
-}
+  let targetDate = new Date(date)
 
+  let yearsAgo = currentDate.getFullYear() - targetDate.getFullYear()
+  let monthsAgo = currentDate.getMonth() - targetDate.getMonth()
+  let daysAgo = currentDate.getDate() - targetDate.getDate()
 
+  let formattedDate = ''
 
-async function getAllPosts(dir: string): Promise<{ metadata: Metadata; slug: string; source: string }[]> {
-  const mdxFiles = await getMDXFiles(dir);
-  const limit = pLimit(5);  // Limit to 5 concurrent promises
+  if (yearsAgo > 0) {
+    formattedDate = `${yearsAgo}y ago`
+  } else if (monthsAgo > 0) {
+    formattedDate = `${monthsAgo}mo ago`
+  } else if (daysAgo > 0) {
+    formattedDate = `${daysAgo}d ago`
+  } else {
+    formattedDate = 'Today'
+  }
 
-  return Promise.all(
-    mdxFiles.map((file) =>
-      limit(async () => {
-        const slug = path.basename(file, path.extname(file));
-        const post = await getPost(slug);
+  let fullDate = targetDate.toLocaleString('en-us', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  })
 
-        // If getPost returned null, handle it (you could filter out null posts later)
-        if (!post) {
-          throw new Error(`Post not found: ${slug}`);
-        }
+  if (!includeRelative) {
+    return fullDate
+  }
 
-        return {
-          metadata: post.metadata, // This now uses the correct Metadata type
-          slug,
-          source: post.source,
-        };
-      })
-    )
-  );
-}
-
-
-export async function getBlogPosts(): Promise<{ metadata: Metadata; slug: string; source: string }[]> {
-  return getAllPosts(path.join(process.cwd(), "content"));
+  return `${fullDate} (${formattedDate})`
 }

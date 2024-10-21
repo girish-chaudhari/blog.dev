@@ -1,3 +1,5 @@
+/* @import url("./prosemirror.css"); */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -407,4 +409,22 @@ article p {
 
 .prose :where(figure):not(:where([class~="not-prose"], [class~="not-prose"] *)){
   margin: 0;
+}
+
+.character-count {
+  align-items: center;
+  color: var(--gray-5);
+  display: flex;
+  font-size: 0.75rem;
+  gap: .5rem;
+  margin: 1.5rem;
+
+  svg {
+    color: var(--purple);
+  }
+
+  &--warning,
+  &--warning svg {
+    color: var(--red);
+  }
 }

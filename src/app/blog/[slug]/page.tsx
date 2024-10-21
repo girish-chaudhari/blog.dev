@@ -1,6 +1,6 @@
 // import CustomMDX from "@/components/mdx";
 import CustomMDX from "@/components/mdx";
-import { getPost } from "@/data/blog";
+import { getBlogPosts } from "@/data/blog";
 import { DATA } from "@/data/resume";
 import { formatDate } from "@/lib/utils";
 import type { Metadata } from "next";
@@ -14,11 +14,11 @@ export async function generateMetadata({
     slug: string;
   };
 }): Promise<Metadata | undefined> {
-  let post = await getPost(params.slug);
-
-if (!post){
-  return undefined
-}
+  // let post = await getPost(params.slug);
+  let post = getBlogPosts().find((post) => post.slug === params.slug);
+  if (!post) {
+    return;
+  }
 
   let {
     title,
@@ -59,11 +59,17 @@ export default async function Blog({
     slug: string;
   };
 }) {
-  let post = await getPost(params.slug);
+  let post = getBlogPosts().find((post) => post.slug === params.slug);
 
   if (!post) {
     notFound();
   }
+
+  // let post = await getPost(params.slug);
+
+  // if (!post) {
+  //   notFound();
+  // }
 
   return (
     <section id="blog">
@@ -103,7 +109,7 @@ export default async function Blog({
         className="prose dark:prose-invert"
         // dangerouslySetInnerHTML={{ __html: post.source }}
       >
-      <CustomMDX source={post.source} />
+        <CustomMDX source={post.content} />
       </article>
     </section>
   );
